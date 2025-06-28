@@ -1,8 +1,9 @@
 package com.tencent.tinker.build.gradle;
 
 import com.android.build.gradle.AppExtension;
-import com.android.build.gradle.api.ApkVariant;
-import com.android.build.gradle.api.ApplicationVariant; // Required for android.applicationVariants.all
+import com.android.build.gradle.AppExtension;
+import com.android.build.gradle.api.ApplicationVariant;
+import com.android.build.gradle.api.BaseVariantOutput; // For iterating variant outputs
 import com.android.build.gradle.internal.dsl.DexOptions;
 import com.tencent.tinker.build.gradle.extension.TinkerArkHotExtension;
 import com.tencent.tinker.build.gradle.extension.TinkerBuildConfigExtension;
@@ -12,35 +13,42 @@ import com.tencent.tinker.build.gradle.extension.TinkerPackageConfigExtension;
 import com.tencent.tinker.build.gradle.extension.TinkerPatchExtension;
 import com.tencent.tinker.build.gradle.extension.TinkerResourceExtension;
 import com.tencent.tinker.build.gradle.extension.TinkerSevenZipExtension;
-import com.tencent.tinker.build.gradle.task.TinkerManifestAction;
-import com.tencent.tinker.build.gradle.task.TinkerMultidexConfigTask;
-import com.tencent.tinker.build.gradle.task.TinkerPatchSchemaTask;
-import com.tencent.tinker.build.gradle.task.TinkerProguardConfigAction;
-import com.tencent.tinker.build.gradle.task.TinkerResourceIdTask;
-import com.tencent.tinker.build.gradle.transform.ImmutableDexTransform;
+// TODO: Import specific Task classes once they are translated/created
+// import com.tencent.tinker.build.gradle.task.TinkerManifestAction;
+// import com.tencent.tinker.build.gradle.task.TinkerMultidexConfigTask;
+// import com.tencent.tinker.build.gradle.task.TinkerPatchSchemaTask;
+// import com.tencent.tinker.build.gradle.task.TinkerProguardConfigAction;
+// import com.tencent.tinker.build.gradle.task.TinkerResourceIdTask;
+// import com.tencent.tinker.build.gradle.transform.ImmutableDexTransform;
 import com.tencent.tinker.build.util.FileOperation;
 import com.tencent.tinker.build.util.TinkerBuildPath;
-import com.tencent.tinker.build.util.Utils;
+// import com.tencent.tinker.build.util.Utils; // Not directly used in this refactoring pass
+
+import org.gradle.api.Action;
 import org.gradle.api.GradleException;
 import org.gradle.api.Plugin;
 import org.gradle.api.Project;
-import org.gradle.api.Action;
+import org.gradle.api.Task;
 import org.gradle.api.logging.Logger;
-// import org.codehaus.groovy.runtime.ScriptBytecodeAdapter; // Avoid direct Groovy RT if possible
-// import org.codehaus.groovy.runtime.DefaultTypeTransformation;
+
 import java.io.File;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.Collections;
-
-import sun.misc.Unsafe; // Highly discouraged, used in original for reflection tricks
+import java.util.HashMap;
+import java.util.Map;
+// import sun.misc.Unsafe; // Avoid Unsafe if possible, comment out for now
 
 /**
  * Gradle plugin for Tinker patch generation.
  *
- * This class is a translation from decompiled Groovy code.
- * The original Groovy code made heavy use of dynamic features and closures,
- * which are represented here using their Java runtime equivalents or refactored
- * for better readability.
+ * This class is a translation from decompiled (originally Groovy) code.
+ * The aim is to make it more readable Java, representing Groovy closures
+ * with Java lambdas or Action classes, and clarifying dynamic dispatch.
+ *
+ * TODO: Translate helper classes like `Compatibilities.java` which are crucial for AGP interaction.
+ * TODO: Translate actual Task classes (TinkerPatchSchemaTask, etc.) and Action classes.
+ * TODO: Refine AGP task interaction once `Compatibilities.java` is clearer or replaced with direct AGP APIs.
  */
 public class TinkerPatchPlugin implements Plugin<Project> {
 
@@ -48,14 +56,31 @@ public class TinkerPatchPlugin implements Plugin<Project> {
     private Project project;
     private Logger logger;
 
+    // Placeholder for the TinkerManifestAction logic, as it's complex and involves map state.
+    // In a full translation, this would be its own class.
+    private static class TinkerManifestActionHelper implements Action<Task> {
+        private final Project project;
+        public final Map<String, String> outputNameToManifestMap = new HashMap<>();
+
+        public TinkerManifestActionHelper(Project project) {
+            this.project = project;
+        }
+
+        @Override
+        public void execute(Task task) {
+            // Actual manifest modification logic would go here if this Action was directly performing it.
+            // In Tinker, it seems this action primarily collects manifest paths.
+            project.getLogger().info("TinkerManifestActionHelper: Task " + task.getName() + " finished. Manifest map collected: " + outputNameToManifestMap.size() + " entries.");
+        }
+    }
+
+
     @Override
     public void apply(Project project) {
         this.project = project;
         this.logger = project.getLogger();
 
         // Apply osdetector plugin
-        // Original: siteArr0[0].call(this.mProject, ScriptBytecodeAdapter.createMap(new Object[]{"plugin", "osdetector"}));
-        // or siteArr0[1].call(this.mProject, ScriptBytecodeAdapter.createMap(new Object[]{"plugin", "com.google.osdetector"}));
         try {
             project.apply(Collections.singletonMap("plugin", "osdetector"));
         } catch (Exception e) {

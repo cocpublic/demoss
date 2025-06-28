@@ -152,63 +152,74 @@ public class RFixPatchPlugin implements Plugin<Project> {
 
     protected void initRFixPluginTask(Project project) {
         if (!project.getPlugins().hasPlugin("com.android.application")) {
-            logger.warn("RFixPatchPlugin init RFix plugin tasks fail, 'com.android.application' plugin not applied!");
+            logger.warn("RFixPatchPlugin: init RFix plugin tasks fail, 'com.android.application' plugin not applied!");
             return;
         }
 
-        project.afterEvaluate(new Action<Project>() {
-            @Override
-            public void execute(Project evaluatedProject) {
-                // Corresponds to RFixPatchPlugin$_initRFixPluginTask_closure1
-                configureRFixTasksAfterEvaluate(evaluatedProject);
-            }
+        project.afterEvaluate(evaluatedProject -> {
+            // Corresponds to RFixPatchPlugin$_initRFixPluginTask_closure1
+            configureRFixTasksAfterEvaluate(evaluatedProject);
         });
     }
 
+    /**
+     * Configures RFix specific tasks and settings after the project is evaluated.
+     * This is where the main patch logic setup happens.
+     * TODO: This method's full functionality depends heavily on `EngineManager` and potentially `TinkerPluginWrapper`.
+     */
     private void configureRFixTasksAfterEvaluate(Project project) {
-        // String supportedEngines = EngineManager.getInstance().getSupportEngine(); // Assuming static method
+        // String supportedEngines = EngineManager.getInstance().getSupportEngine();
         // logger.warn("RFixPatchPlugin support patch type: " + supportedEngines);
-        // TODO: Verify EngineManager.getInstance().getSupportEngine() - decompiled code showed CallSite call
+        // TODO: Translate EngineManager and uncomment/verify.
 
-        initRFixConfig(project); // Setup default configurations for RFixPatchExtension
+        initRFixConfig(project); // Apply default configurations to RFixPatchExtension
 
         RFixPatchExtension rfixExtension = (RFixPatchExtension) project.getExtensions().getByName("RFixPatch");
-        logger.warn("RFixPatchPlugin patchType from extension = " + rfixExtension.getPatchType());
+        logger.warn("RFixPatchPlugin: patchType from extension = " + rfixExtension.getPatchType());
 
         if (RFixConstants.PATCH_TYPE_DISABLE.equalsIgnoreCase(rfixExtension.getPatchType())) {
-            logger.warn("RFixPatchPlugin apply patch disabled by patchType settings.");
+            logger.warn("RFixPatchPlugin: Apply patch disabled by patchType settings.");
             return;
         }
 
-        // Validate configured patch types
+        // Validate configured patch types against EngineManager
         String[] configuredTypes = rfixExtension.getPatchType().split("\\|");
         for (String type : configuredTypes) {
-            // if (!EngineManager.getInstance().isSupport(type)) { // Assuming static method
-            //     logger.error("RFixPatchPlugin patch type '" + type + "' not supported!");
+            // if (!EngineManager.getInstance().isSupport(type)) {
+            //     logger.error("RFixPatchPlugin: patch type '" + type + "' not supported by EngineManager!");
             // }
-            // TODO: Verify EngineManager.getInstance().isSupport(type)
+            // TODO: Translate EngineManager and uncomment/verify.
         }
 
-        // The original code instantiated TinkerPluginWrapper and called afterEvaluate on it.
-        // This suggests RFix might reuse or adapt Tinker's plugin logic.
-        // TinkerPluginWrapper pluginWrapper = new TinkerPluginWrapper();
-        // pluginWrapper.afterEvaluate(project); // This is a conceptual translation
-        logger.info("RFix: TinkerPluginWrapper would be involved here if RFix reuses Tinker's structure.");
-        // This is a major part that needs understanding of TinkerPluginWrapper's role in RFix context.
-        // For now, we acknowledge its presence.
+        // CRITICAL POINT: The original decompiled code suggests RFix might use a TinkerPluginWrapper.
+        // siteArr0[21].callConstructor(TinkerPluginWrapper.class);
+        // siteArr0[22].call(pluginWrapper, this.project.get()); // pluginWrapper.afterEvaluate(project)
+        // If TinkerPluginWrapper exists and is substantial, a large part of RFix's task setup
+        // might be delegated to a Tinker-like mechanism. This needs to be investigated when
+        // translating com.tencent.rfix.build.gradle.TinkerPluginWrapper.
+        logger.info("RFix: Potential involvement of a 'TinkerPluginWrapper' for task setup. Needs investigation.");
+        // TODO: Translate and understand `com.tencent.rfix.build.gradle.TinkerPluginWrapper` if it exists.
+        // If it does, the actual task creation for RFix might be inside that wrapper,
+        // and this method might just configure the wrapper.
 
         initAutoVerifyConfig(project, rfixExtension);
-        RFixPatchMonitor.init(project, rfixExtension); // Assuming static method
+
+        // RFixPatchMonitor.init(project, rfixExtension);
+        // TODO: Translate RFixPatchMonitor and uncomment/verify.
+        logger.info("RFix: RFixPatchMonitor.init would be called here.");
     }
 
-
+    /**
+     * Initializes the Redirect Transformer if enabled and supported.
+     * TODO: Depends on `FeatureManager` and `EngineManager`.
+     */
     protected void initRedirectTransformer(Project project) {
-        // boolean redirectSupport = FeatureManager.getInstance().redirectSupport(); // Assuming
-        // TODO: Verify FeatureManager.getInstance().redirectSupport()
-        boolean redirectSupport = true; // Placeholder
+        // boolean redirectSupport = FeatureManager.getInstance().redirectSupport();
+        // TODO: Translate FeatureManager and uncomment.
+        boolean redirectSupportPlaceholder = true; // Placeholder: Assume supported for now
 
-        if (!redirectSupport) {
-            logger.info("RFix: Redirect Transformer support is disabled by FeatureManager.");
+        if (!redirectSupportPlaceholder) {
+            logger.info("RFix: Redirect Transformer support is disabled by FeatureManager (or placeholder).");
             return;
         }
 
